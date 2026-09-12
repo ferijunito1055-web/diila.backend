@@ -1,7 +1,6 @@
 const { supabase } = require('../../lib/supabase');
 const { allowCors } = require('../../lib/cors');
-
-// Muuntaa frontendin muodon (camelCase) tietokannan muotoon (snake_case)
+ 
 function toDb(c) {
   return {
     id: c.id,
@@ -20,8 +19,7 @@ function toDb(c) {
     joined_at: c.joinedAt
   };
 }
-
-// Muuntaa tietokannan rivin takaisin frontendin muotoon
+ 
 function fromDb(row) {
   return {
     id: row.id,
@@ -40,22 +38,31 @@ function fromDb(row) {
     joinedAt: row.joined_at
   };
 }
-
+ 
 module.exports = async (req, res) => {
   if (allowCors(req, res)) return;
-
+ 
   if (req.method === 'GET') {
     const { data, error } = await supabase.from('companies').select('*');
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json(data.map(fromDb));
   }
-
+ 
   if (req.method === 'POST') {
     const row = toDb(req.body);
     const { error } = await supabase.from('companies').upsert(row);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ ok: true });
   }
-
+ 
+  if (req.method === 'DELETE') {
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ error: 'id puuttuu.' });
+    const { error } = await supabase.from('companies').delete().eq('id', id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ ok: true });
+  }
+ 
   return res.status(405).json({ error: 'Menetelmää ei tueta.' });
 };
+ 
